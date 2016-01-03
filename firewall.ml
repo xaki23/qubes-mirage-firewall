@@ -81,6 +81,11 @@ let translate t frame =
 let random_user_port () =
   1024 + Random.int (0xffff - 1024)
 
+let pp_stats fmt stats =
+  Format.fprintf fmt "bindings=%d buckets=%d"
+    stats.Hashtbl.num_bindings
+    stats.Hashtbl.num_buckets
+
 let rec add_nat_rule_and_transmit ?(retries=100) t frame fn fmt logf =
   let xl_port = random_user_port () in
   match fn xl_port with
@@ -101,7 +106,7 @@ let rec add_nat_rule_and_transmit ?(retries=100) t frame fn fmt logf =
       Log.warn "Failed to add NAT rule: Unparseable" Logs.unit;
       return ()
   | Nat_rewrite.Ok _ ->
-      Log.info fmt (logf xl_port);
+      Log.info (fmt ^^ " [%a]") (fun f -> logf xl_port f pp_stats (Nat_lookup.size t.Router.nat));
       match translate t frame with
       | Some frame -> forward_ipv4 t frame
       | None ->
