@@ -13,6 +13,13 @@ let () =
   (* Set default log level *)
   set_level (Some Logs.Info)
 
+(* Configure GC *)
+let () =
+  let default = Gc.get () in
+  Gc.set { default with
+    verbose = 0x2ff;
+  }
+
 module Main (Clock : V1.CLOCK) = struct
   module Log_reporter = Mirage_logs.Make(Clock)
   module Uplink = Uplink.Make(Clock)
