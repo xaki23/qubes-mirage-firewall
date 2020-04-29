@@ -9,10 +9,14 @@ type t = {
   client_eth : Client_eth.t;
   nat : My_nat.t;
   uplink : interface;
+  (* NOTE: do not try to make this pure, it relies on mvars / side effects *)
+  nat_ports : Ports.t ref;
+  dns_ports : Ports.t ref;
 }
 
 let create ~client_eth ~uplink ~nat =
-  { client_eth; nat; uplink }
+  let dns_ports = ref Ports.empty in
+  { client_eth; nat; uplink; nat_ports = ref Ports.empty; dns_ports }
 
 let target t buf =
   let dst_ip = buf.Ipv4_packet.dst in

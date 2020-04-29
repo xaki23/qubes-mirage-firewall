@@ -11,8 +11,8 @@ type action = [
 ]
 
 val create : max_entries:int -> t Lwt.t
-val reset : t -> unit Lwt.t
-val remove_connections : t -> Ipaddr.V4.t -> unit
+val reset : t -> Ports.t ref -> unit Lwt.t
+val remove_connections : t -> Ports.t ref -> Ipaddr.V4.t -> unit
 val translate : t -> Nat_packet.t -> Nat_packet.t option Lwt.t
-val add_nat_rule_and_translate : t ->
+val add_nat_rule_and_translate : t -> nat_ports:Ports.t ref -> dns_ports:Ports.t ref ->
   xl_host:Ipaddr.V4.t -> action -> Nat_packet.t -> (Nat_packet.t, string) result Lwt.t

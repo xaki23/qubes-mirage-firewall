@@ -33,17 +33,19 @@ let translate t packet =
     None
   | Ok packet -> Some packet
 
-let random_user_port () =
-  1024 + Random.int (0xffff - 1024)
+let pick_free_port ~nat_ports ~dns_ports =
+  Ports.pick_free_port ~add_list:nat_ports ~consult_list:dns_ports
 
-let reset t =
+let reset t p =
+  p := Ports.empty;
   Nat.reset t.table
 
-let remove_connections t ip =
+let remove_connections t p ip =
   let Mirage_nat.{ tcp ; udp } = Nat.remove_connections t.table ip in
-  ignore(tcp, udp)
+  (* NOTE we need to track tcp and udp ports separately *)
+  p := Ports.diff !p Ports.(union (of_list tcp) (of_list udp))
 
-let add_nat_rule_and_translate t ~xl_host action packet =
+let add_nat_rule_and_translate t ~nat_ports ~dns_ports ~xl_host action packet =
   let apply_action xl_port =
     Lwt.catch (fun () ->
         Nat.add t.table packet (xl_host, xl_port) action
@@ -54,19 +56,19 @@ let add_nat_rule_and_translate t ~xl_host action packet =
       )
   in
   let rec aux ~retries =
-    let xl_port = random_user_port () in
+    let xl_port = pick_free_port ~nat_ports ~dns_ports in
     apply_action xl_port >>= function
     | Error `Out_of_memory ->
       (* Because hash tables resize in big steps, this can happen even if we have a fair
          chunk of free memory. *)
       Log.warn (fun f -> f "Out_of_memory adding NAT rule. Dropping NAT table...");
-      reset t >>= fun () ->
+      reset t nat_ports >>= fun () ->
       aux ~retries:(retries - 1)
     | Error `Overlap when retries < 0 -> Lwt.return (Error "Too many retries")
     | Error `Overlap ->
       if retries = 0 then (
         Log.warn (fun f -> f "Failed to find a free port; resetting NAT table");
-        reset t >>= fun () ->
+        reset t nat_ports >>= fun () ->
         aux ~retries:(retries - 1)
       ) else (
         aux ~retries:(retries - 1)

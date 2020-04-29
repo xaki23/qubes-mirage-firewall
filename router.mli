@@ -9,6 +9,8 @@ type t = private {
   client_eth : Client_eth.t;
   nat : My_nat.t;
   uplink : interface;
+  nat_ports : Ports.t ref;
+  dns_ports : Ports.t ref;
 }
 
 val create :
