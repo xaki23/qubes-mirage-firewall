@@ -14,7 +14,6 @@ let table_size =
   let key = Arg.opt ~stage:`Both Arg.int 5_000 info in
   create "nat_table_size" key
 
-let mirage_nat_pin = "git+https://github.com/roburio/mirage-nat.git#remove-connections"
 let mirage_qubes_pin = "git+https://github.com/roburio/mirage-qubes.git#qubesdb-with-commit"
 
 let main =
@@ -34,7 +33,7 @@ let main =
       package "mirage-net-xen";
       package "ipaddr" ~min:"4.0.0";
       package "mirage-qubes" ~pin:mirage_qubes_pin;
-      package "mirage-nat" ~pin:mirage_nat_pin;
+      package "mirage-nat" ~min:"2.2.0";
       package "mirage-logs";
       package "mirage-xen" ~min:"5.0.0";
       package ~min:"4.5.0" "dns-client";
