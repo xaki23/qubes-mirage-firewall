@@ -106,7 +106,7 @@ let add_vif get_ts { Dao.ClientVif.domid; device_id } dns_client ~client_ip ~rou
           update new_db new_rules
         in
         update Qubes.DB.KeyMap.empty [])
-      (function Lwt.Canceled -> Lwt.return_unit)
+      (function Lwt.Canceled -> Lwt.return_unit | e -> Lwt.fail e)
   in
   Cleanup.on_cleanup cleanup_tasks (fun () -> Lwt.cancel qubesdb_updater);
   Router.add_client router iface >>= fun () ->
@@ -126,7 +126,7 @@ let add_vif get_ts { Dao.ClientVif.domid; device_id } dns_client ~client_ip ~rou
               | `IPv6 -> Lwt.return_unit (* TODO: oh no! *)
         )
         >|= or_raise "Listen on client interface" Netback.pp_error)
-      (function Lwt.Canceled -> Lwt.return_unit)
+      (function Lwt.Canceled -> Lwt.return_unit | e -> Lwt.fail e)
   in
   Cleanup.on_cleanup cleanup_tasks (fun () -> Lwt.cancel listener);
   Lwt.pick [ qubesdb_updater ; listener ]
